@@ -1,4 +1,0 @@
-org.crsh.shell.impl.command.CRaSHShellFactory
-org.crsh.processor.term.ProcessorIOHandler
-org.crsh.auth.JaasAuthenticationPlugin
-org.crsh.auth.SimpleAuthenticationPlugin

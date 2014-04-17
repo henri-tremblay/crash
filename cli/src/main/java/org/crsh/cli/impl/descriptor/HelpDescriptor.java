@@ -89,7 +89,6 @@ import org.crsh.cli.impl.invocation.ParameterMatch;
 import org.crsh.cli.impl.invocation.Resolver;
 import org.crsh.cli.type.ValueTypeFactory;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -98,7 +97,7 @@ import java.util.Map;
 /** @author <a href="mailto:julien.viet@exoplatform.com">Julien Viet</a> */
 public class HelpDescriptor<T> extends CommandDescriptorImpl<T> {
 
-  public static <T> HelpDescriptor<T> create(CommandDescriptorImpl<T> descriptor) {
+  public static <T> HelpDescriptor<T> create(CommandDescriptor<T> descriptor) {
     return new HelpDescriptor<T>(descriptor);
   }
 
@@ -124,8 +123,8 @@ public class HelpDescriptor<T> extends CommandDescriptorImpl<T> {
   /** . */
   private final LinkedHashMap<String, HelpDescriptor<T>> subordinates;
 
-  public HelpDescriptor(CommandDescriptorImpl<T> delegate) throws IntrospectionException {
-    this(null, delegate);
+  public HelpDescriptor(CommandDescriptor<T> delegate) throws IntrospectionException {
+    this(null, (CommandDescriptorImpl<T>)delegate);
   }
 
   private HelpDescriptor(HelpDescriptor<T> owner, CommandDescriptorImpl<T> delegate) throws IntrospectionException {
@@ -159,53 +158,51 @@ public class HelpDescriptor<T> extends CommandDescriptorImpl<T> {
   }
 
   @Override
-  public CommandInvoker<T> getInvoker(final InvocationMatch<T> match) {
-    final CommandInvoker<T> invoker = delegate.getInvoker(match);
-    return new CommandInvoker<T>() {
-      @Override
-      public Class<?> getReturnType() {
-        return invoker != null ? invoker.getReturnType() : Void.class;
-      }
+  public CommandInvoker<T, ?> getInvoker(final InvocationMatch<T> match) {
 
-      @Override
-      public Type getGenericReturnType() {
-        return invoker != null ? invoker.getGenericReturnType() : Void.class;
-      }
+    //
+    final CommandInvoker<T, ?> invoker = delegate.getInvoker(match);
 
-      @Override
-      public Class<?>[] getParameterTypes() {
-        return invoker != null ? invoker.getParameterTypes() : new Class[0];
-      }
+    // Get the option from the top match
+    ParameterMatch<OptionDescriptor> helpDesc = null;
+    for (InvocationMatch<T> current = match;current != null && helpDesc == null;current = current.owner()) {
+      helpDesc = current.getParameter(HELP_OPTION);
+    }
 
-      @Override
-      public Type[] getGenericParameterTypes() {
-        return invoker != null ? invoker.getGenericParameterTypes() : new Type[0];
-      }
+    //
+    final boolean help = helpDesc != null || invoker == null;
 
-      @Override
-      public Object invoke(Resolver resolver, T command) throws InvocationException, SyntaxException {
-
-        // Get the option from the top match
-        ParameterMatch<OptionDescriptor> help = null;
-        for (InvocationMatch<T> current = match;current.owner() != null && help == null;current = current.owner()) {
-          help = current.getParameter(HELP_OPTION);
+    //
+    if (help) {
+      return new CommandInvoker<T, Help>() {
+        @Override
+        public InvocationMatch<T> getMatch() {
+          return match;
         }
-
-        //
-        if (help == null && invoker != null) {
-          return invoker.invoke(resolver, command);
-        } else {
-          StringBuilder sb = new StringBuilder();
-          try {
-            printUsage(sb);
-          }
-          catch (IOException e) {
-            throw new AssertionError(e);
-          }
-          return sb.toString();
+        @Override
+        public Class<Help> getReturnType() {
+          return Help.class;
         }
-      }
-    };
+        @Override
+        public Type getGenericReturnType() {
+          return Help.class;
+        }
+        @Override
+        public Class<?>[] getParameterTypes() {
+          return new Class[0];
+        }
+        @Override
+        public Type[] getGenericParameterTypes() {
+          return new Type[0];
+        }
+        @Override
+        public Help invoke(Resolver resolver, T command) throws InvocationException, SyntaxException {
+          return new Help<T>(delegate);
+        }
+      };
+    } else {
+      return invoker;
+    }
   }
 
   @Override

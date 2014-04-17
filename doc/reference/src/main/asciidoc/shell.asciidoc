@@ -1,0 +1,221 @@
+== Shell usage
+
+[[connection]]
+=== Connection
+
+You need to connect using telnet, SSH or _directly_ to use the
+shell.  The last method is a special mode using the JVM input and output.
+
+==== Telnet access
+
+Telnet connection is done on port 5000:
+
+[subs="attributes,specialcharacters", options="nowrap"]
+----
+(! 520)-> telnet localhost 5000
+Trying ::1...
+Connected to localhost.
+Escape character is '^]'.
+   ______
+ .~      ~. |`````````,       .'.                   ..'''' |         |
+|           |'''|'''''      .''```.              .''       |_________|
+|           |    `.       .'       `.         ..'          |         |
+ `.______.' |      `.   .'           `. ....''             |         | {crash-version}
+
+Follow and support the project on http://vietj.github.com/crash
+Welcome to julien.local + !
+It is {localdatetime} now
+----
+
+The +bye+ command disconnect from the shell.
+
+==== SSH access
+
+SSH connection is done on port 2000 with the password *_crash_*:
+
+----
+juliens-macbook-pro:~ julien$ ssh -p 2000 -l root localhost
+root@localhost's password:
+CRaSH {crash-version} (http://vietj.github.com/crash)
+Welcome to juliens-macbook-pro.local!
+It is {localdatetime} now.
+%
+----
+
+The +bye+ command disconnect from the shell.
+
+==== Native access
+
+A third mode is available for standalone CRaSH usage where it uses the
+JVM native input and output. When you run in standalone, CRaSh will be available just after the JVM is launched.
+
+=== Features
+
+* Line edition: the current line can be edited via left and right arrow keys
+* History: the key up and key down enable history browsing
+* Quoting: simple quotes or double quotes allow to insert blanks in command options and arguments, for instance
++"old boy"+ or +'old boy'+. One quote style can quote another, like `"hi, it's me"`.
+* Completion: an advanced completion system is available
+
+== Command usage
+
+=== Getting basic help
+
+The +help+ command will display the list of known commands by the shell.
+
+----
+[/]% help
+% help
+Try one of these commands with the -h or --help switch:
+
+  cd               changes the current node
+  commit           saves changes
+  consume          collects a set of nodes
+  cp               copy a node to another
+  env              display the term env
+  exportworkspace  Export a workspace on the file system (experimental)
+  fail             Fails
+  help             provides basic help
+  importworkspace  Import a workspace from the file system (experimental)
+  invoke           Invoke a static method
+  log              logging commands
+  ls               list the content of a node
+  man              format and display the on-line manual pages
+  mixin            mixin commands
+  mv               move a node
+  node             node commands
+  produce          produce a set of nodes
+  pwd              print the current node path
+  rm               remove one or several node or a property
+  rollback         rollback changes
+  select           execute a JCR sql query
+  setperm          modify the security permissions of a JCR node
+  sleep            sleep for some time
+  thread           vm thread commands
+  version          versioning commands
+  wait             Invoke a static method
+  ws               workspace commands
+  xpath            execute a JCR xpath query
+----
+
+=== Command line usage
+
+The basic CRaSH usage is like any shell, you just type a command with its options and arguments. However it is possible
+ to compose commands and create powerful combinations.
+
+==== Basic command usage
+
+Typing the command followed by options and arguments will do the job
+
+----
+% ls /
+...
+----
+
+==== Command help display
+
+Any command help can be displayed by using the -h argument:
+
+----
+% ls -h
+usage: ls [-h | --help] [-h | --help] [-d | --depth] path
+
+   [-h | --help]  command usage
+   [-h | --help]  command usage
+   [-d | --depth] Print depth
+   path           the path of the node content to list
+----
+
+In addition of that, commands can have a complete manual that can be displayed thanks to the +man+ command:
+
+----
+% man ls
+NAME
+       ls - list the content of a node
+
+SYNOPSIS
+       ls [-h | --help] [-h | --help] [-d | --depth] [-d | --depth] path
+
+DESCRIPTION
+       The ls command displays the content of a node. By default it lists the content of the current node, however it also
+       accepts a path argument that can be absolute or relative.
+
+       [/]% ls
+       /
+       +-properties
+       | +-jcr:primaryType: nt:unstructured
+       | +-jcr:mixinTypes: [exo:owneable,exo:privilegeable]
+       | +-exo:owner: '__system'
+       | +-exo:permissions: [any read,*:/platform/administrators read,*:/platform/administrators add_node,*:/platform/administrators set_property,*:/platform/administrators remove]
+       +-children
+       | +-/workspace
+       | +-/contents
+       | +-/Users
+       | +-/gadgets
+       | +-/folder
+
+
+PARAMETERS
+       [-h | --help]
+           Provides command usage
+
+       [-h | --help]
+           Provides command usage
+
+       [-d | --depth]
+           Print depth
+
+       path
+           the path of the node content to list
+----
+
+==== Advanced command usage
+
+A CRaSH command is able to consume and produce a stream of object, allowing complex interactions between commands
+where they can exchange stream of compatible objets. Most of the time, JCR nodes are the objects exchanged by the
+commands but any command is free to produce or consume any type.
+
+By default a command that does not support this feature does not consume or produce anything. Such commands usually
+inherits from the +org.crsh.command.ClassCommand+ class that does not care about it. If you look at this class
+you will see it extends the the +org.crsh.command.BaseCommand+.
+
+More advanced commands inherits from +org.crsh.command.BaseCommand+ class that specifies two generic types +<C>+
+and +<P>+:
+
+* +<C>+ is the type of the object that the command consumes
+* +<P>+ is the type of the object that the command produces
+
+The command composition provides two operators:
+
+* The pipe operator `|` allows to stream a command output stream to a command input stream
+* The distribution operator `+` allows to distribute an input stream to several commands and to combine the output stream
+of several commands into a single stream.
+
+==== Connecting a +<Void,Node>+ command to a +<Node,Void>+ command through a pipe
+
+.Remove all nt:unstructed nodes
+----
+% select * from nt:unstructed | rm
+----
+
+==== Connecting a +<Void,Node>+ command to two +<Node,Void>+ commands through a pipe
+
+.Update the security of all nt:unstructed nodes
+----
+% select * from nt:unstructured | setperm -i any -a read + setperm -i any -a write
+----
+
+==== Connecting two +<Void,Node>+ command to a +<Node,Void>+ commands through a pipe
+
+.Add the mixin mix:referenceable to any node of type nt:file or nt:folder
+----
+% select * from nt:file + select * from nt:folder | addmixin mix:referenceable
+----
+
+==== Mixed cases
+
+When a command does not consume a stream but is involved in a distribution it will not receive any stream but will
+be nevertheless invoked.
+
+Likewise when a command does not produce a stream but is involved in a distribution, it will not produce anything but
+will be nevertheless invoked.

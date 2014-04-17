@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <artifactId>crsh.parent</artifactId>
-    <groupId>org.crsh</groupId>
-    <version>1.3.0-SNAPSHOT</version>
+    <artifactId>crash.parent</artifactId>
+    <groupId>org.crashub</groupId>
+    <version>1.3.0-beta16-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.crsh</groupId>
-  <artifactId>crsh.plugins</artifactId>
+  <artifactId>crash.plugins</artifactId>
   <packaging>pom</packaging>
-  <version>1.3.0-SNAPSHOT</version>
+  <version>1.3.0-beta16-SNAPSHOT</version>
 
-  <name>CRaSH plugins parent</name>
+  <name>CRaSH Plugins</name>
 
   <modules>
     <module>crowd</module>
+    <module>mail</module>
+    <module>jcr</module>
+    <module>cron</module>
   </modules>
 
 </project>

@@ -1,8 +1,0 @@
-org.crsh.text.formatter.ThreadRenderable
-org.crsh.text.formatter.MapRenderable
-org.crsh.text.formatter.LoggerRenderable
-org.crsh.text.formatter.MemoryUsageRenderable
-org.crsh.text.formatter.BindingRenderable
-org.crsh.text.formatter.EntityTypeRenderable
-org.crsh.text.ui.ElementRenderable
-org.crsh.text.ui.UIBuilderRenderable

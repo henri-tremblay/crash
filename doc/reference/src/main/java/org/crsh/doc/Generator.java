@@ -20,6 +20,7 @@
 package org.crsh.doc;
 
 import org.crsh.cli.descriptor.CommandDescriptor;
+import org.crsh.command.BaseShellCommand;
 import org.crsh.command.CRaSHCommand;
 import org.crsh.command.DescriptionFormat;
 import org.crsh.command.ShellCommand;
@@ -57,37 +58,35 @@ public class Generator {
       Thread.currentThread().getContextClassLoader());
     ctx.refresh();
     CRaSH crash = new CRaSH(ctx);
-    for (String s : ctx.listResourceId(ResourceKind.COMMAND)) {
+    StringBuilder buffer = new StringBuilder();
+    for (String s : crash.getCommandNames()) {
       ShellCommand cmd = crash.getCommand(s);
-      StringBuilder man = new StringBuilder();
-      if (cmd instanceof CRaSHCommand) {
-        CRaSHCommand cc = (CRaSHCommand)cmd;
+      if (cmd instanceof BaseShellCommand) {
+        BaseShellCommand cc = (BaseShellCommand)cmd;
         CommandDescriptor<?> desc = cc.getDescriptor();
+        buffer.append("== ").append(desc.getName()).append("\n").append("\n");
         if (desc.getSubordinates().size() > 1) {
           for (CommandDescriptor<?> m : desc.getSubordinates().values()) {
-            man.append("{{screen}}");
-            m.printMan(man);
-            man.append("{{/screen}}");
+            buffer.append("=== ").append(desc.getName()).append(" ").append(m.getName()).append("\n").append("\n");
+            buffer.append("----\n");
+            m.printMan(buffer);
+            buffer.append("----\n\n");
           }
         } else {
-          man.append("{{screen}}");
-          desc.printMan(man);
-          man.append("{{/screen}}");
+          buffer.append("----\n");
+          desc.printMan(buffer);
+          buffer.append("----\n\n");
         }
-      } else {
-        man.append(cmd.describe(s, DescriptionFormat.MAN));
       }
-      if (man.length() > 0) {
-        File f = new File(root, s + ".wiki");
-        if (!f.exists()) {
-          PrintWriter pw = new PrintWriter(f);
-          try {
-            System.out.println("Generating wiki file " + f.getCanonicalPath());
-            pw.print(man);
-          } finally {
-            pw.close();
-          }
-        }
+    }
+    if (buffer.length() > 0) {
+      File f = new File(root, "reference.asciidoc");
+      PrintWriter pw = new PrintWriter(f);
+      try {
+        System.out.println("Generating asciidoc file " + f.getCanonicalPath());
+        pw.print(buffer);
+      } finally {
+        pw.close();
       }
     }
   }
